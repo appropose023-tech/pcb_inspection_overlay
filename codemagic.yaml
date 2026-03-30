@@ -1,11 +1,64 @@
 workflows:
-  flutter-app:
+  build-app:
     name: Build PCB Inspector APK
     max_build_duration: 60
     environment:
       flutter: stable
+
     scripts:
-      - flutter pub get
-      - flutter build apk --release
+      - name: Step 1 — Create fresh Flutter project
+        script: |
+          echo "Creating Flutter project..."
+          flutter create app
+
+          echo "Copying your lib code..."
+          cp -r lib app/
+
+          if [ -d "assets" ]; then
+            cp -r assets app/
+          fi
+
+      - name: Step 2 — Generate pubspec.yaml
+        script: |
+          echo "Writing pubspec.yaml..."
+          cat > app/pubspec.yaml << 'EOF'
+          name: pcb_inspection_flutter
+          description: Live PCB inspection with backend overlay
+          publish_to: "none"
+
+          environment:
+            sdk: ">=3.0.0 <4.0.0"
+
+          dependencies:
+            flutter:
+              sdk: flutter
+            camera: ^0.11.0+1
+            http: ^1.1.0
+            path_provider: ^2.1.2
+
+          dev_dependencies:
+            flutter_test:
+              sdk: flutter
+
+          flutter:
+            uses-material-design: true
+            assets:
+              - assets/
+          EOF
+
+      - name: Step 3 — pub get
+        script: |
+          cd app
+          flutter pub get
+
+      - name: Step 4 — Build APK
+        script: |
+          cd app
+          flutter build apk --release
+
     artifacts:
-      - build/app/outputs/flutter-apk/app-release.apk
+      - app/build/app/outputs/flutter-apk/app-release.apk
+
+    cache:
+      cache_paths:
+        - $HOME/.pub-cache
